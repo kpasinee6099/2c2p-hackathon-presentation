@@ -1,11 +1,718 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hello World</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Reconciler — Presentation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0a0a1a; color: #e0e0e0; overflow: hidden; }
+
+  .slide { display: none; width: 100vw; height: 100vh; padding: 60px 80px; position: relative; }
+  .slide.active { display: flex; flex-direction: column; }
+
+  /* Navigation */
+  .nav { position: fixed; bottom: 30px; right: 40px; z-index: 100; display: flex; gap: 12px; align-items: center; }
+  .nav button { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; transition: all 0.2s; }
+  .nav button:hover { background: rgba(255,255,255,0.2); }
+  .nav .counter { color: rgba(255,255,255,0.5); font-size: 14px; }
+
+  /* Progress bar */
+  .progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #4facfe, #00f2fe); transition: width 0.3s; z-index: 100; }
+
+  /* Slide styles */
+  .slide-title { font-size: 42px; font-weight: 700; margin-bottom: 8px; }
+  .slide-subtitle { font-size: 20px; color: #8892b0; margin-bottom: 40px; }
+  .accent { color: #4facfe; }
+  .accent-green { color: #00e676; }
+  .accent-orange { color: #ffab40; }
+  .accent-red { color: #ff5252; }
+
+  /* Cards */
+  .cards { display: grid; gap: 20px; flex: 1; }
+  .cards-2 { grid-template-columns: 1fr 1fr; }
+  .cards-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cards-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 28px; }
+  .card h3 { font-size: 18px; margin-bottom: 12px; color: #4facfe; }
+  .card p, .card li { font-size: 15px; line-height: 1.7; color: #b0b8d0; }
+  .card ul { padding-left: 20px; }
+  .card .time { font-size: 14px; color: #ffab40; margin-top: 10px; font-weight: 600; }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin: 20px 0; }
+  .flow-box { background: rgba(79,172,254,0.1); border: 1px solid rgba(79,172,254,0.3); border-radius: 10px; padding: 16px 24px; text-align: center; min-width: 140px; }
+  .flow-box.green { background: rgba(0,230,118,0.1); border-color: rgba(0,230,118,0.3); }
+  .flow-box.orange { background: rgba(255,171,64,0.1); border-color: rgba(255,171,64,0.3); }
+  .flow-box.red { background: rgba(255,82,82,0.1); border-color: rgba(255,82,82,0.3); }
+  .flow-arrow { font-size: 24px; color: rgba(255,255,255,0.3); }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  th { background: rgba(79,172,254,0.15); text-align: left; padding: 12px 16px; font-size: 14px; color: #4facfe; border-bottom: 2px solid rgba(79,172,254,0.3); }
+  td { padding: 10px 16px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #b0b8d0; }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+
+  /* Big number */
+  .big-num { font-size: 64px; font-weight: 800; color: #4facfe; line-height: 1; }
+  .big-label { font-size: 18px; color: #8892b0; margin-top: 4px; }
+
+  /* Architecture box */
+  .arch-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 20px 28px; margin: 6px 0; font-family: 'Fira Code', 'Consolas', monospace; font-size: 14px; line-height: 1.8; }
+  .arch-label { display: inline-block; background: rgba(79,172,254,0.15); color: #4facfe; padding: 2px 10px; border-radius: 4px; font-size: 13px; margin-right: 8px; }
+
+  /* Highlight box */
+  .highlight-box { background: linear-gradient(135deg, rgba(79,172,254,0.1), rgba(0,242,254,0.05)); border: 1px solid rgba(79,172,254,0.2); border-radius: 12px; padding: 24px 32px; margin: 16px 0; }
+
+  /* Slide 1 special */
+  .pain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; align-content: start; }
+  .pain-item { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; }
+  .pain-icon { font-size: 28px; min-width: 40px; text-align: center; }
+  .pain-text h4 { font-size: 16px; color: #e0e0e0; margin-bottom: 4px; }
+  .pain-text p { font-size: 14px; color: #8892b0; line-height: 1.5; }
+
+  /* Timeline arrow */
+  .tl { display: flex; align-items: stretch; gap: 0; margin: 20px 0; flex: 0; }
+  .tl-step { flex: 1; position: relative; text-align: center; padding: 20px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .tl-step::after { content: ''; position: absolute; top: 0; right: -30px; width: 0; height: 0; border-top: 48px solid transparent; border-bottom: 48px solid transparent; border-left: 30px solid var(--bg); z-index: 2; }
+  .tl-step::before { content: ''; position: absolute; top: 0; right: -34px; width: 0; height: 0; border-top: 48px solid transparent; border-bottom: 48px solid transparent; border-left: 30px solid rgba(255,255,255,0.15); z-index: 1; }
+  .tl-step:last-child::after, .tl-step:last-child::before { display: none; }
+  .tl-step .tl-num { font-size: 11px; font-weight: 800; color: rgba(255,255,255,0.35); letter-spacing: 1px; text-transform: uppercase; }
+  .tl-step .tl-icon { font-size: 32px; margin: 4px 0; }
+  .tl-step .tl-label { font-size: 13px; color: #e0e0e0; font-weight: 600; margin-top: 4px; display: block; line-height: 1.4; }
+  .tl-step .tl-time { font-size: 11px; color: #ffab40; font-weight: 700; margin-top: 6px; display: block; background: rgba(255,171,64,0.1); padding: 2px 10px; border-radius: 10px; }
+  .tl-s1 { --bg: #1a2744; background: #1a2744; border-radius: 10px 0 0 10px; }
+  .tl-s2 { --bg: #1e2d4a; background: #1e2d4a; }
+  .tl-s3 { --bg: #223350; background: #223350; }
+  .tl-s4 { --bg: #263956; background: #263956; }
+  .tl-s5 { --bg: #2a3f5c; background: #2a3f5c; }
+  .tl-s6 { --bg: #2e4562; background: #2e4562; border-radius: 0 10px 10px 0; }
+
+  /* Mock PDF */
+  .mock-pdf { background: #fff; color: #222; border-radius: 6px; padding: 20px 24px; font-family: 'Times New Roman', serif; font-size: 12px; line-height: 1.6; box-shadow: 0 4px 24px rgba(0,0,0,0.4); max-width: 420px; }
+  .mock-pdf .pdf-header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 12px; }
+  .mock-pdf .pdf-header h4 { font-size: 16px; color: #000; margin: 0; }
+  .mock-pdf .pdf-header p { font-size: 11px; color: #555; margin: 2px 0; }
+  .mock-pdf table { width: 100%; font-size: 11px; margin-top: 8px; }
+  .mock-pdf th { background: #e8e8e8; color: #333; padding: 5px 8px; font-size: 10px; border: 1px solid #ccc; }
+  .mock-pdf td { padding: 4px 8px; border: 1px solid #ddd; color: #333; font-size: 11px; }
+
+  /* Mock Excel */
+  .mock-excel { background: #1e3a1e; border: 2px solid #2d7d2d; border-radius: 6px; overflow: hidden; font-family: 'Consolas', 'Courier New', monospace; font-size: 11px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+  .mock-excel .excel-toolbar { background: #217346; padding: 6px 12px; display: flex; gap: 16px; align-items: center; }
+  .mock-excel .excel-toolbar span { color: #fff; font-size: 11px; }
+  .mock-excel .excel-toolbar .fx { background: #1a5c37; padding: 2px 8px; border-radius: 3px; color: #afd6a7; font-size: 10px; }
+  .mock-excel table { width: 100%; border-collapse: collapse; }
+  .mock-excel th { background: #2d5a2d; color: #a0d0a0; padding: 4px 8px; font-size: 10px; border: 1px solid #3a6e3a; font-weight: normal; }
+  .mock-excel td { padding: 3px 8px; border: 1px solid #2a4a2a; color: #c0e0c0; font-size: 11px; background: #1a3a1a; }
+  .mock-excel .row-header { background: #2d5a2d; color: #a0d0a0; text-align: center; width: 30px; }
+  .mock-excel .cell-error { color: #ff6b6b; background: #3a1a1a; }
+  .mock-excel .cell-match { color: #69f0ae; }
+  .mock-excel .cell-warn { color: #ffab40; background: #3a3a1a; }
+
+  /* Roadmap */
+  .timeline { display: flex; gap: 24px; flex: 1; align-items: stretch; }
+  .timeline-item { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; position: relative; }
+  .timeline-item::before { content: ''; position: absolute; top: 28px; left: -24px; width: 24px; height: 2px; background: rgba(79,172,254,0.3); }
+  .timeline-item:first-child::before { display: none; }
+  .timeline-num { font-size: 48px; font-weight: 800; color: rgba(79,172,254,0.2); margin-bottom: 8px; }
+  .timeline-title { font-size: 18px; font-weight: 600; color: #4facfe; margin-bottom: 12px; }
+</style>
 </head>
 <body>
-  <h1>Hello, World! eiei</h1>
+
+<div class="progress" id="progress"></div>
+
+<!-- ==================== SLIDE 1a: TIMELINE FLOW ==================== -->
+<div class="slide active" id="slide-1">
+  <div class="slide-title">The Problem</div>
+  <div class="slide-subtitle">Current manual tax reconciliation — <span class="accent-orange">40+ hours, can't start until finance data arrives</span></div>
+
+  <!-- Timeline Arrow -->
+  <div class="tl">
+    <div class="tl-step tl-s1">
+      <span class="tl-num">Step 1</span>
+      <span class="tl-icon">📧</span>
+      <span class="tl-label">Receive Merchant<br>Tax PDFs Daily</span>
+      <span class="tl-time">Day 1–30</span>
+    </div>
+    <div class="tl-step tl-s2">
+      <span class="tl-num">Step 2</span>
+      <span class="tl-icon">📄</span>
+      <span class="tl-label">PDF Converter<br>+ Sort in Excel</span>
+      <span class="tl-time">~12 hours</span>
+    </div>
+    <div class="tl-step" style="--bg: #5a1a1a; background: #5a1a1a; border: 2px solid rgba(255,82,82,0.4);">
+      <span class="tl-num" style="color: #ff5252;">⛔ Blocked</span>
+      <span class="tl-icon">⏳</span>
+      <span class="tl-label" style="color: #ff8a80;">Wait for Finance<br>Delayed 3–5 Days</span>
+      <span class="tl-time" style="background: rgba(255,82,82,0.2); color: #ff5252;">Can't match yet</span>
+    </div>
+    <div class="tl-step tl-s4">
+      <span class="tl-num">Step 3</span>
+      <span class="tl-icon">🔍</span>
+      <span class="tl-label">VLOOKUP Batch<br>Match Records</span>
+      <span class="tl-time">~10 hours</span>
+    </div>
+    <div class="tl-step tl-s5">
+      <span class="tl-num">Step 4</span>
+      <span class="tl-icon">❓</span>
+      <span class="tl-label">Find Missing IDs<br>Email Follow-up</span>
+      <span class="tl-time">~7 hours</span>
+    </div>
+    <div class="tl-step tl-s6">
+      <span class="tl-num">Step 5</span>
+      <span class="tl-icon">📋</span>
+      <span class="tl-label">Generate<br>Tax Report</span>
+      <span class="tl-time">Day 15–20</span>
+    </div>
+  </div>
+
+  <!-- Key pain callouts — short & visual -->
+  <div style="display: flex; gap: 8px; margin-top: 8px; margin-bottom: 4px;">
+    <div style="flex:1; padding: 8px 12px; background: rgba(255,82,82,0.08); border: 1px solid rgba(255,82,82,0.2); border-radius: 8px; text-align: center;">
+      <div style="font-size: 22px;">📅</div>
+      <div style="font-size: 12px; font-weight: 700; color: #ff8a80; margin-top: 4px;">Finance Delayed</div>
+      <div style="font-size: 10px; color: #8892b0; margin-top: 2px;">Batches arrive 3–5 days late</div>
+    </div>
+    <div style="flex:1; padding: 8px 12px; background: rgba(255,171,64,0.08); border: 1px solid rgba(255,171,64,0.2); border-radius: 8px; text-align: center;">
+      <div style="font-size: 22px;">🏦</div>
+      <div style="font-size: 12px; font-weight: 700; color: #ffcc80; margin-top: 4px;">Multiple Banks</div>
+      <div style="font-size: 10px; color: #8892b0; margin-top: 2px;">Different PDF layout per bank</div>
+    </div>
+    <div style="flex:1; padding: 8px 12px; background: rgba(255,82,82,0.08); border: 1px solid rgba(255,82,82,0.2); border-radius: 8px; text-align: center;">
+      <div style="font-size: 22px;">📄</div>
+      <div style="font-size: 12px; font-weight: 700; color: #ff8a80; margin-top: 4px;">Missing Tax Invoice</div>
+      <div style="font-size: 10px; color: #8892b0; margin-top: 2px;">Merchants skip or send late</div>
+    </div>
+    <div style="flex:1; padding: 8px 12px; background: rgba(255,171,64,0.08); border: 1px solid rgba(255,171,64,0.2); border-radius: 8px; text-align: center;">
+      <div style="font-size: 22px;">🆔</div>
+      <div style="font-size: 12px; font-weight: 700; color: #ffcc80; margin-top: 4px;">No Merchant ID</div>
+      <div style="font-size: 10px; color: #8892b0; margin-top: 2px;">Finance has name only, no ID</div>
+    </div>
+  </div>
+
+  <!-- Two panels: Mock PDF + Mock Excel -->
+  <div style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 28px; flex: 1; margin-top: 16px; align-items: start;">
+
+    <!-- Left: Real PDF Invoice Images -->
+    <div>
+      <div style="color: #8892b0; font-size: 13px; margin-bottom: 8px;">📄 Merchant tax PDFs arrive daily — different bank, different layout:</div>
+      <div style="position: relative; background: #111; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.5);">
+        <div id="pdf-carousel" style="position: relative; width: 100%; height: 340px;">
+          <img src="bank1.png" class="pdf-img active-img" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:1;transition:opacity 0.5s;">
+          <img src="bank2.png" class="pdf-img" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.5s;">
+          <img src="bank3.png" class="pdf-img" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.5s;">
+          <img src="bank4.png" class="pdf-img" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.5s;">
+          <img src="bank5.png" class="pdf-img" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.5s;">
+        </div>
+        <!-- Carousel dots -->
+        <div style="display:flex;justify-content:center;gap:8px;padding:8px 0;background:rgba(0,0,0,0.5);">
+          <span class="pdf-dot active-dot" onclick="showPdf(0)" style="width:8px;height:8px;border-radius:50%;background:#4facfe;cursor:pointer;transition:background 0.3s;"></span>
+          <span class="pdf-dot" onclick="showPdf(1)" style="width:8px;height:8px;border-radius:50%;background:#555;cursor:pointer;transition:background 0.3s;"></span>
+          <span class="pdf-dot" onclick="showPdf(2)" style="width:8px;height:8px;border-radius:50%;background:#555;cursor:pointer;transition:background 0.3s;"></span>
+          <span class="pdf-dot" onclick="showPdf(3)" style="width:8px;height:8px;border-radius:50%;background:#555;cursor:pointer;transition:background 0.3s;"></span>
+          <span class="pdf-dot" onclick="showPdf(4)" style="width:8px;height:8px;border-radius:50%;background:#555;cursor:pointer;transition:background 0.3s;"></span>
+        </div>
+      </div>
+      <div style="margin-top: 10px; padding: 8px 12px; background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.2); border-radius: 8px; font-size: 11px; color: #ff8a80;">
+        ⚠️ Different PDF format per bank → manual Excel sorting required
+      </div>
+    </div>
+
+    <!-- Right: Mock Excel Comparison -->
+    <div>
+      <div style="color: #8892b0; font-size: 13px; margin-bottom: 8px;">📊 Then wait for finance data — and VLOOKUP 1,000+ rows:</div>
+      <div class="mock-excel">
+        <div class="excel-toolbar">
+          <span>📗 tax_reconciliation_feb2026.xlsx</span>
+          <span class="fx">=VLOOKUP(B2, Finance!A:F, 5, FALSE)</span>
+          <span style="color: #ff6b6b; font-weight: 600;">#N/A</span>
+        </div>
+        <table>
+          <tr>
+            <th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th>
+          </tr>
+          <tr>
+            <td class="row-header">1</td>
+            <th>Merchant Name</th><th>Merchant Net</th><th>Finance Net</th><th>Diff</th><th>VLOOKUP</th><th>Status</th>
+          </tr>
+          <tr>
+            <td class="row-header">2</td>
+            <td>Coffee House</td><td>9,900.00</td><td>9,900.00</td><td class="cell-match">0.00</td><td class="cell-match">✓</td><td class="cell-match">Match</td>
+          </tr>
+          <tr>
+            <td class="row-header">3</td>
+            <td>Pizza Planet</td><td>15,420.50</td><td>15,421.00</td><td class="cell-warn">0.50</td><td class="cell-error">#N/A</td><td class="cell-error">FAIL</td>
+          </tr>
+          <tr>
+            <td class="row-header">4</td>
+            <td>Burger Town Co.,Ltd.</td><td>8,750.00</td><td>—</td><td class="cell-error">—</td><td class="cell-error">#N/A</td><td class="cell-error">Missing</td>
+          </tr>
+          <tr>
+            <td class="row-header">5</td>
+            <td>SUSHI HOUSE</td><td>—</td><td>22,100.00</td><td class="cell-error">—</td><td class="cell-error">#N/A</td><td class="cell-error">No MID</td>
+          </tr>
+          <tr>
+            <td class="row-header">6</td>
+            <td>Noodle Bar</td><td>5,300.75</td><td>5,300.00</td><td class="cell-warn">0.75</td><td class="cell-error">#N/A</td><td class="cell-error">FAIL</td>
+          </tr>
+          <tr>
+            <td class="row-header">7</td>
+            <td>Tea Garden</td><td>12,000.00</td><td>12,000.00</td><td class="cell-match">0.00</td><td class="cell-match">✓</td><td class="cell-match">Match</td>
+          </tr>
+          <tr>
+            <td class="row-header">8</td>
+            <td colspan="6" style="text-align: center; color: #666; font-style: italic; background: #0f2a0f;">... 994 more rows ...</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Pain callouts -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+        <div style="padding: 8px 12px; background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.2); border-radius: 6px; font-size: 11px;">
+          <span class="accent-red">Row 3:</span> <span style="color: #b0b8d0;">0.50 baht diff → VLOOKUP fails. Manual check needed.</span>
+        </div>
+        <div style="padding: 8px 12px; background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.2); border-radius: 6px; font-size: 11px;">
+          <span class="accent-red">Row 4:</span> <span style="color: #b0b8d0;">Finance has no record. Need to email merchant.</span>
+        </div>
+        <div style="padding: 8px 12px; background: rgba(255,82,82,0.1); border: 1px solid rgba(255,82,82,0.2); border-radius: 6px; font-size: 11px;">
+          <span class="accent-red">Row 5:</span> <span style="color: #b0b8d0;">No Merchant ID. Search old files? Email finance?</span>
+        </div>
+        <div style="padding: 8px 12px; background: rgba(255,171,64,0.1); border: 1px solid rgba(255,171,64,0.2); border-radius: 6px; font-size: 11px;">
+          <span class="accent-orange">Row 6:</span> <span style="color: #b0b8d0;">0.75 baht rounding → another manual check.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box" style="margin-top: 12px; text-align: center; padding: 16px 32px;">
+    <span style="font-size: 18px; font-weight: 700;">
+      <span class="accent-red">Daily PDFs from many banks</span> + <span class="accent-red">Finance data delayed 3–5 days</span> + <span class="accent-red">VLOOKUP fails on ±1 baht</span> = <span class="accent-red">40+ hours/month of waiting & manual work</span>
+    </span>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 2: SOLUTION DIAGRAM ==================== -->
+<div class="slide" id="slide-2" style="padding: 40px 50px;">
+  <div class="slide-title" style="font-size: 48px;">The Solution — <span class="accent">Smart Reconciler</span></div>
+  <div class="slide-subtitle" style="font-size: 22px; margin-bottom: 24px;">Two apps, one pipeline — Gmail to Tax Report</div>
+
+  <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px;">
+
+    <!-- ── APP 1 ── -->
+    <div style="background: linear-gradient(135deg, rgba(156,39,176,0.12), rgba(156,39,176,0.03)); border: 2px solid rgba(156,39,176,0.35); border-radius: 18px; padding: 24px 32px; position: relative;">
+      <div style="position: absolute; top: -14px; left: 28px; background: linear-gradient(135deg, #9c27b0, #7b1fa2); color: #fff; font-size: 14px; font-weight: 700; padding: 5px 22px; border-radius: 20px; box-shadow: 0 2px 12px rgba(156,39,176,0.3);">🅰️ App 1 — Ingest & Extract · Dev 1</div>
+      <div class="flow" style="margin: 12px 0 0 0; gap: 10px;">
+        <div class="flow-box" style="min-width: 120px; padding: 18px 14px;">
+          <div style="font-size: 36px;">📧</div>
+          <div style="font-weight:700;color:#e0e0e0;margin-top:6px;font-size:15px;">Gmail API</div>
+          <div style="font-size:12px;color:#8892b0;margin-top:4px;">Download ZIPs<br>& PDFs daily</div>
+        </div>
+        <div class="flow-arrow" style="font-size:36px; color: rgba(156,39,176,0.5);">→</div>
+        <div class="flow-box" style="min-width: 120px; padding: 18px 14px;">
+          <div style="font-size: 36px;">📂</div>
+          <div style="font-weight:700;color:#e0e0e0;margin-top:6px;font-size:15px;">Unzip & Sort</div>
+          <div style="font-size:12px;color:#8892b0;margin-top:4px;">Group by merchant<br>& date</div>
+        </div>
+        <div class="flow-arrow" style="font-size:36px; color: rgba(156,39,176,0.5);">→</div>
+
+        <!-- BEDROCK HERO -->
+        <div style="min-width: 190px; padding: 18px 20px; background: linear-gradient(135deg, rgba(156,39,176,0.28), rgba(103,58,183,0.22)); border: 2.5px solid rgba(156,39,176,0.65); border-radius: 14px; text-align: center; box-shadow: 0 0 30px rgba(156,39,176,0.25), 0 0 60px rgba(156,39,176,0.08), inset 0 0 20px rgba(156,39,176,0.05);">
+          <div style="font-size: 40px;">🧠</div>
+          <div style="font-size: 18px; font-weight: 800; color: #ce93d8; margin-top: 6px;">Amazon Bedrock</div>
+          <div style="font-size: 11px; color: #b39ddb; margin-top: 4px;">Generative AI · Multimodal LLM</div>
+          <div style="font-size: 11px; color: #9575cd; margin-top: 2px;">Reads any PDF layout — zero templates</div>
+          <div style="margin-top: 8px; display: inline-block; background: rgba(156,39,176,0.35); padding: 4px 14px; border-radius: 12px; font-size: 10px; color: #e1bee7; font-weight: 700; letter-spacing: 0.5px;">⚡ LAYOUT-AGNOSTIC</div>
+        </div>
+
+        <div class="flow-arrow" style="font-size:36px; color: rgba(156,39,176,0.5);">→</div>
+
+        <!-- S3 HERO -->
+        <div style="min-width: 140px; padding: 18px 16px; background: linear-gradient(135deg, rgba(255,171,64,0.2), rgba(255,171,64,0.08)); border: 2.5px solid rgba(255,171,64,0.55); border-radius: 14px; text-align: center; box-shadow: 0 0 28px rgba(255,171,64,0.2), 0 0 56px rgba(255,171,64,0.06), inset 0 0 18px rgba(255,171,64,0.04);">
+          <div style="font-size: 40px;">☁️</div>
+          <div style="font-size: 18px; font-weight: 800; color: #ffcc80; margin-top: 6px;">Amazon S3</div>
+          <div style="font-size: 12px; color: #ffe0b2; margin-top: 4px;">Structured CSV<br>date-partitioned</div>
+          <div style="margin-top: 8px; display: inline-block; background: rgba(255,171,64,0.3); padding: 4px 14px; border-radius: 12px; font-size: 10px; color: #fff3e0; font-weight: 700; letter-spacing: 0.5px;">📦 DATA LAKE</div>
+        </div>
+
+        <div style="font-size:28px; color: rgba(255,255,255,0.15);">+</div>
+
+        <!-- DYNAMODB HERO -->
+        <div style="min-width: 140px; padding: 18px 16px; background: linear-gradient(135deg, rgba(79,172,254,0.2), rgba(79,172,254,0.08)); border: 2.5px solid rgba(79,172,254,0.55); border-radius: 14px; text-align: center; box-shadow: 0 0 28px rgba(79,172,254,0.2), 0 0 56px rgba(79,172,254,0.06), inset 0 0 18px rgba(79,172,254,0.04);">
+          <div style="font-size: 40px;">🗄️</div>
+          <div style="font-size: 18px; font-weight: 800; color: #90caf9; margin-top: 6px;">DynamoDB</div>
+          <div style="font-size: 12px; color: #bbdefb; margin-top: 4px;">Merchant name<br>→ ID registry</div>
+          <div style="margin-top: 8px; display: inline-block; background: rgba(79,172,254,0.3); padding: 4px 14px; border-radius: 12px; font-size: 10px; color: #e3f2fd; font-weight: 700; letter-spacing: 0.5px;">⚡ &lt;10ms LOOKUP</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Connector ── -->
+    <div style="text-align: center; font-size: 30px; color: rgba(79,172,254,0.3); line-height: 1; letter-spacing: 6px;">▼ &nbsp; S3 + DynamoDB &nbsp; ▼</div>
+
+    <!-- ── APP 2 ── -->
+    <div style="background: linear-gradient(135deg, rgba(0,230,118,0.08), rgba(0,230,118,0.02)); border: 2px solid rgba(0,230,118,0.3); border-radius: 18px; padding: 24px 32px; position: relative;">
+      <div style="position: absolute; top: -14px; left: 28px; background: linear-gradient(135deg, #00c853, #00897b); color: #fff; font-size: 14px; font-weight: 700; padding: 5px 22px; border-radius: 20px; box-shadow: 0 2px 12px rgba(0,230,118,0.3);">🅱️ App 2 — Reconcile & Report · Dev 2</div>
+
+      <!-- Row 1: Load → Match → Results -->
+      <div class="flow" style="margin: 12px 0 0 0; gap: 12px;">
+        <div class="flow-box" style="min-width: 120px; padding: 18px 14px;">
+          <div style="font-size: 36px;">☁️</div>
+          <div style="font-weight:700;color:#e0e0e0;margin-top:6px;font-size:15px;">Load from S3</div>
+          <div style="font-size:12px;color:#8892b0;margin-top:4px;">Merchant CSV<br>+ Finance CSV</div>
+        </div>
+        <div class="flow-arrow" style="font-size:36px; color: rgba(0,230,118,0.4);">→</div>
+
+        <!-- ML ENGINE HERO -->
+        <div style="min-width: 200px; padding: 18px 20px; background: linear-gradient(135deg, rgba(0,230,118,0.18), rgba(0,150,80,0.12)); border: 2.5px solid rgba(0,230,118,0.55); border-radius: 14px; text-align: center; box-shadow: 0 0 28px rgba(0,230,118,0.18), 0 0 56px rgba(0,230,118,0.06);">
+          <div style="font-size: 40px;">🤖</div>
+          <div style="font-size: 18px; font-weight: 800; color: #69f0ae; margin-top: 6px;">ML Matching</div>
+          <div style="font-size: 13px; color: #a5d6a7; margin-top: 4px;">1. Exact → 2. Tolerance ±1฿<br>3. Fuzzy NLP name match</div>
+          <div style="margin-top: 8px; display: inline-block; background: rgba(0,230,118,0.25); padding: 4px 14px; border-radius: 12px; font-size: 10px; color: #b9f6ca; font-weight: 700;">scikit-learn + RapidFuzz</div>
+        </div>
+
+        <div class="flow-arrow" style="font-size:36px; color: rgba(0,230,118,0.4);">→</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="flow-box green" style="padding: 12px 18px; font-size:15px; font-weight:600;">✅ Matched</div>
+          <div class="flow-box orange" style="padding: 12px 18px; font-size:15px; font-weight:600;">⚠️ Mismatch</div>
+          <div class="flow-box red" style="padding: 12px 18px; font-size:15px; font-weight:600;">❌ Missing</div>
+        </div>
+      </div>
+
+      <!-- Row 2: Resolve → Email → Report -->
+      <div class="flow" style="margin: 14px 0 0 0; gap: 12px;">
+        <div class="flow-box" style="min-width: 150px; padding: 16px 14px;">
+          <div style="font-size: 30px;">🔍</div>
+          <div style="font-weight:700;color:#e0e0e0;margin-top:4px;font-size:15px;">Merchant ID Lookup</div>
+          <div style="font-size:12px;color:#8892b0;margin-top:4px;">DynamoDB → S3 history → unresolved</div>
+        </div>
+        <div class="flow-arrow" style="font-size:36px; color: rgba(0,230,118,0.4);">→</div>
+        <div class="flow-box" style="min-width: 150px; padding: 16px 14px;">
+          <div style="font-size: 30px;">📧</div>
+          <div style="font-weight:700;color:#e0e0e0;margin-top:4px;font-size:15px;">Auto Emails</div>
+          <div style="font-size:12px;color:#8892b0;margin-top:4px;">To finance team & merchants</div>
+        </div>
+        <div class="flow-arrow" style="font-size:36px; color: rgba(0,230,118,0.4);">→</div>
+        <div class="flow-box green" style="min-width: 170px; padding: 16px 14px;">
+          <div style="font-size: 30px;">🧾</div>
+          <div style="font-weight:700;color:#a5d6a7;margin-top:4px;font-size:15px;">Tax Filing Report</div>
+          <div style="font-size:12px;color:#81c784;margin-top:4px;">6-sheet Excel · Save to S3</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tech pills — 4 separate -->
+    <div style="display: flex; gap: 12px; justify-content: center; margin-top: 4px;">
+      <span style="background: linear-gradient(135deg, rgba(156,39,176,0.25), rgba(156,39,176,0.1)); border: 1.5px solid rgba(156,39,176,0.4); color: #ce93d8; padding: 8px 22px; border-radius: 20px; font-size: 14px; font-weight: 700; box-shadow: 0 0 12px rgba(156,39,176,0.15);">🧠 Amazon Bedrock</span>
+      <span style="background: linear-gradient(135deg, rgba(0,230,118,0.15), rgba(0,230,118,0.05)); border: 1.5px solid rgba(0,230,118,0.3); color: #69f0ae; padding: 8px 22px; border-radius: 20px; font-size: 14px; font-weight: 700; box-shadow: 0 0 12px rgba(0,230,118,0.12);">📊 Random Forest + RapidFuzz</span>
+      <span style="background: linear-gradient(135deg, rgba(255,171,64,0.2), rgba(255,171,64,0.08)); border: 1.5px solid rgba(255,171,64,0.4); color: #ffcc80; padding: 8px 22px; border-radius: 20px; font-size: 14px; font-weight: 700; box-shadow: 0 0 12px rgba(255,171,64,0.15);">☁️ Amazon S3</span>
+      <span style="background: linear-gradient(135deg, rgba(79,172,254,0.2), rgba(79,172,254,0.08)); border: 1.5px solid rgba(79,172,254,0.4); color: #90caf9; padding: 8px 22px; border-radius: 20px; font-size: 14px; font-weight: 700; box-shadow: 0 0 12px rgba(79,172,254,0.15);">🗄️ DynamoDB</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SLIDE 3: WITH SMART RECONCILER ==================== -->
+<div class="slide" id="slide-3">
+  <div class="slide-title">With Smart Reconciler</div>
+  <div class="slide-subtitle">Same workflow, fully automated — <span class="accent-green">15 minutes, same day</span></div>
+
+  <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 20px;">
+
+    <!-- 5 steps as horizontal flow -->
+    <div style="display: flex; gap: 0; align-items: stretch;">
+
+      <div style="flex:1; background: linear-gradient(180deg, rgba(156,39,176,0.12), rgba(156,39,176,0.04)); border: 1.5px solid rgba(156,39,176,0.3); border-radius: 14px 0 0 14px; padding: 28px 20px; text-align: center;">
+        <div style="font-size: 44px;">📧</div>
+        <div style="font-size: 17px; font-weight: 800; color: #ce93d8; margin-top: 10px;">Ingest</div>
+        <div style="font-size: 12px; color: #b0b8d0; margin-top: 8px; line-height: 1.5;">Gmail → Unzip → Bedrock<br>reads any PDF → S3</div>
+        <div style="margin-top: 12px; background: rgba(156,39,176,0.2); padding: 5px 14px; border-radius: 12px; font-size: 12px; color: #e1bee7; font-weight: 700; display: inline-block;">Automated</div>
+      </div>
+
+      <div style="display:flex;align-items:center;font-size:28px;color:rgba(255,255,255,0.15);padding:0 2px;">→</div>
+
+      <div style="flex:1; background: linear-gradient(180deg, rgba(0,230,118,0.1), rgba(0,230,118,0.03)); border: 1.5px solid rgba(0,230,118,0.3); padding: 28px 20px; text-align: center;">
+        <div style="font-size: 44px;">🤖</div>
+        <div style="font-size: 17px; font-weight: 800; color: #69f0ae; margin-top: 10px;">Smart Match</div>
+        <div style="font-size: 12px; color: #b0b8d0; margin-top: 8px; line-height: 1.5;">Exact → ±1 baht →<br>Fuzzy NLP name match</div>
+        <div style="margin-top: 12px; background: rgba(0,230,118,0.15); padding: 5px 14px; border-radius: 12px; font-size: 12px; color: #b9f6ca; font-weight: 700; display: inline-block;">~30 sec</div>
+      </div>
+
+      <div style="display:flex;align-items:center;font-size:28px;color:rgba(255,255,255,0.15);padding:0 2px;">→</div>
+
+      <div style="flex:1; background: linear-gradient(180deg, rgba(79,172,254,0.1), rgba(79,172,254,0.03)); border: 1.5px solid rgba(79,172,254,0.3); padding: 28px 20px; text-align: center;">
+        <div style="font-size: 44px;">🔍</div>
+        <div style="font-size: 17px; font-weight: 800; color: #4facfe; margin-top: 10px;">Resolve IDs</div>
+        <div style="font-size: 12px; color: #b0b8d0; margin-top: 8px; line-height: 1.5;">DynamoDB &lt;10ms<br>→ S3 history fallback</div>
+        <div style="margin-top: 12px; background: rgba(79,172,254,0.15); padding: 5px 14px; border-radius: 12px; font-size: 12px; color: #bbdefb; font-weight: 700; display: inline-block;">~5 sec</div>
+      </div>
+
+      <div style="display:flex;align-items:center;font-size:28px;color:rgba(255,255,255,0.15);padding:0 2px;">→</div>
+
+      <div style="flex:1; background: linear-gradient(180deg, rgba(255,171,64,0.1), rgba(255,171,64,0.03)); border: 1.5px solid rgba(255,171,64,0.3); padding: 28px 20px; text-align: center;">
+        <div style="font-size: 44px;">📧</div>
+        <div style="font-size: 17px; font-weight: 800; color: #ffcc80; margin-top: 10px;">Follow Up</div>
+        <div style="font-size: 12px; color: #b0b8d0; margin-top: 8px; line-height: 1.5;">Auto-email per merchant<br>with ID, dates, amounts</div>
+        <div style="margin-top: 12px; background: rgba(255,171,64,0.15); padding: 5px 14px; border-radius: 12px; font-size: 12px; color: #ffe0b2; font-weight: 700; display: inline-block;">1 click</div>
+      </div>
+
+      <div style="display:flex;align-items:center;font-size:28px;color:rgba(255,255,255,0.15);padding:0 2px;">→</div>
+
+      <div style="flex:1; background: linear-gradient(180deg, rgba(0,230,118,0.12), rgba(0,230,118,0.04)); border: 1.5px solid rgba(0,230,118,0.35); border-radius: 0 14px 14px 0; padding: 28px 20px; text-align: center;">
+        <div style="font-size: 44px;">🧾</div>
+        <div style="font-size: 17px; font-weight: 800; color: #69f0ae; margin-top: 10px;">Report</div>
+        <div style="font-size: 12px; color: #b0b8d0; margin-top: 8px; line-height: 1.5;">6-sheet Excel<br>Save to S3</div>
+        <div style="margin-top: 12px; background: rgba(0,230,118,0.2); padding: 5px 14px; border-radius: 12px; font-size: 12px; color: #b9f6ca; font-weight: 700; display: inline-block;">1 click</div>
+      </div>
+
+    </div>
+
+    <!-- Before vs After highlight -->
+    <div style="display: flex; gap: 24px; justify-content: center;">
+      <div style="text-align: center; padding: 24px 40px; background: rgba(255,82,82,0.06); border: 1.5px solid rgba(255,82,82,0.2); border-radius: 14px;">
+        <div style="font-size: 14px; color: #ff8a80; font-weight: 700; margin-bottom: 8px;">❌ BEFORE</div>
+        <div style="font-size: 48px; font-weight: 800; color: #ff5252;">40+ hrs</div>
+        <div style="font-size: 14px; color: #8892b0; margin-top: 4px;">15–20 working days</div>
+      </div>
+      <div style="display:flex;align-items:center;font-size:40px;color:rgba(255,255,255,0.15);">→</div>
+      <div style="text-align: center; padding: 24px 40px; background: rgba(0,230,118,0.06); border: 1.5px solid rgba(0,230,118,0.25); border-radius: 14px;">
+        <div style="font-size: 14px; color: #69f0ae; font-weight: 700; margin-bottom: 8px;">✅ AFTER</div>
+        <div style="font-size: 48px; font-weight: 800; color: #00e676;">15 min</div>
+        <div style="font-size: 14px; color: #8892b0; margin-top: 4px;">Same day, automated</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== SLIDE 4: BUSINESS IMPACT ==================== -->
+<div class="slide" id="slide-4" style="padding: 40px 60px;">
+  <div class="slide-title" style="font-size: 48px;">Business Impact</div>
+  <div class="slide-subtitle" style="margin-bottom: 20px;">Free accounting workload to do more valuable work</div>
+
+  <div style="flex: 1; display: flex; flex-direction: column; gap: 16px; justify-content: center;">
+
+    <!-- HERO NUMBERS — big big big -->
+    <div style="display: flex; gap: 24px; justify-content: center;">
+
+      <div style="flex: 1; text-align: center; padding: 36px 20px; background: linear-gradient(180deg, rgba(79,172,254,0.12), rgba(79,172,254,0.03)); border: 2px solid rgba(79,172,254,0.3); border-radius: 20px; box-shadow: 0 0 40px rgba(79,172,254,0.1);">
+        <div style="font-size: 120px; font-weight: 900; color: #4facfe; line-height: 1; text-shadow: 0 0 40px rgba(79,172,254,0.4);">98%</div>
+        <div style="font-size: 26px; font-weight: 700; color: #90caf9; margin-top: 10px;">Faster</div>
+        <div style="font-size: 15px; color: #8892b0; margin-top: 6px;">40+ hrs → 15 min</div>
+      </div>
+
+      <div style="flex: 1; text-align: center; padding: 36px 20px; background: linear-gradient(180deg, rgba(255,171,64,0.12), rgba(255,171,64,0.03)); border: 2px solid rgba(255,171,64,0.3); border-radius: 20px; box-shadow: 0 0 40px rgba(255,171,64,0.1);">
+        <div style="font-size: 120px; font-weight: 900; color: #ffab40; line-height: 1; text-shadow: 0 0 40px rgba(255,171,64,0.4);">0</div>
+        <div style="font-size: 26px; font-weight: 700; color: #ffcc80; margin-top: 10px;">Manual Templates</div>
+        <div style="font-size: 15px; color: #8892b0; margin-top: 6px;">Bedrock reads any PDF layout</div>
+      </div>
+
+      <div style="flex: 1; text-align: center; padding: 36px 20px; background: linear-gradient(180deg, rgba(0,230,118,0.12), rgba(0,230,118,0.03)); border: 2px solid rgba(0,230,118,0.3); border-radius: 20px; box-shadow: 0 0 40px rgba(0,230,118,0.1);">
+        <div style="font-size: 120px; font-weight: 900; color: #00e676; line-height: 1; text-shadow: 0 0 40px rgba(0,230,118,0.4);">1</div>
+        <div style="font-size: 26px; font-weight: 700; color: #69f0ae; margin-top: 10px;">Click to Report</div>
+        <div style="font-size: 15px; color: #8892b0; margin-top: 6px;">6-sheet Excel, saved to S3</div>
+      </div>
+
+    </div>
+
+    <!-- Compact table below -->
+    <table style="font-size: 15px; margin-top: 8px;">
+      <thead>
+        <tr>
+          <th style="width: 30%;">Metric</th>
+          <th style="width: 35%; color: #ff5252;">Before (Manual)</th>
+          <th style="width: 35%; color: #00e676;">After (Smart Reconciler)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight: 600;">Processing Time</td>
+          <td>40+ hours / month</td>
+          <td style="color: #00e676; font-weight: 600;">~15 minutes</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">Timeline</td>
+          <td>15–20 working days</td>
+          <td style="color: #00e676; font-weight: 600;">Same day</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">New Merchant Setup</td>
+          <td>1 hour per template</td>
+          <td style="color: #00e676; font-weight: 600;">Instant (zero config)</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">Missing Invoice Follow-up</td>
+          <td>Weeks later</td>
+          <td style="color: #00e676; font-weight: 600;">Same day, auto-email</td>
+        </tr>
+        <tr>
+          <td style="font-weight: 600;">Merchant ID Lookup</td>
+          <td>Search old Excel files</td>
+          <td style="color: #00e676; font-weight: 600;">DynamoDB &lt;10ms</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+<!-- ==================== SLIDE 5: ROADMAP ==================== -->
+<div class="slide" id="slide-5" style="padding: 40px 60px;">
+  <div class="slide-title" style="font-size: 48px;">Roadmap</div>
+  <div class="slide-subtitle" style="font-size: 20px; margin-bottom: 24px;">From prototype to production</div>
+
+  <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 24px;">
+
+    <div style="display: flex; gap: 24px; align-items: stretch;">
+
+      <!-- Phase 1 -->
+      <div style="flex: 1; background: linear-gradient(180deg, rgba(156,39,176,0.12), rgba(156,39,176,0.03)); border: 2px solid rgba(156,39,176,0.35); border-radius: 18px; padding: 32px 28px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -10px; right: -10px; font-size: 100px; opacity: 0.06; font-weight: 900;">01</div>
+        <div style="font-size: 44px; margin-bottom: 12px;">📧</div>
+        <div style="font-size: 22px; font-weight: 800; color: #ce93d8; margin-bottom: 16px;">Automated Ingest</div>
+        <div style="font-size: 15px; color: #b0b8d0; line-height: 1.8;">
+          📬 Connect merchant email API<br>
+          🔄 Auto-trigger on new data<br>
+          🚫 Zero manual downloads
+        </div>
+        <div style="margin-top: 16px; display: inline-block; background: rgba(156,39,176,0.25); padding: 6px 18px; border-radius: 14px; font-size: 12px; color: #e1bee7; font-weight: 700;">PHASE 1</div>
+      </div>
+
+      <!-- Phase 2 -->
+      <div style="flex: 1; background: linear-gradient(180deg, rgba(255,171,64,0.12), rgba(255,171,64,0.03)); border: 2px solid rgba(255,171,64,0.35); border-radius: 18px; padding: 32px 28px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -10px; right: -10px; font-size: 100px; opacity: 0.06; font-weight: 900;">02</div>
+        <div style="font-size: 44px; margin-bottom: 12px;">🧠</div>
+        <div style="font-size: 22px; font-weight: 800; color: #ffcc80; margin-bottom: 16px;">Learn & Correct</div>
+        <div style="font-size: 15px; color: #b0b8d0; line-height: 1.8;">
+          📄 Self-learn new PDF templates<br>
+          💰 Auto-correct money amounts<br>
+          <span style="color: #ff8a80; font-weight: 600;">⚠️ Money is critical — get it wrong<br>and you're half in jail already</span>
+        </div>
+        <div style="margin-top: 16px; display: inline-block; background: rgba(255,171,64,0.25); padding: 6px 18px; border-radius: 14px; font-size: 12px; color: #ffe0b2; font-weight: 700;">PHASE 2</div>
+      </div>
+
+      <!-- Phase 3 -->
+      <div style="flex: 1; background: linear-gradient(180deg, rgba(0,230,118,0.12), rgba(0,230,118,0.03)); border: 2px solid rgba(0,230,118,0.35); border-radius: 18px; padding: 32px 28px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -10px; right: -10px; font-size: 100px; opacity: 0.06; font-weight: 900;">03</div>
+        <div style="font-size: 44px; margin-bottom: 12px;">🔗</div>
+        <div style="font-size: 22px; font-weight: 800; color: #69f0ae; margin-bottom: 16px;">Full Integration</div>
+        <div style="font-size: 15px; color: #b0b8d0; line-height: 1.8;">
+          📊 Dashboard by merchant<br>
+          🔌 Integrate with finance workflow<br>
+          📅 Scheduled monthly reconciliation
+        </div>
+        <div style="margin-top: 16px; display: inline-block; background: rgba(0,230,118,0.2); padding: 6px 18px; border-radius: 14px; font-size: 12px; color: #b9f6ca; font-weight: 700;">PHASE 3</div>
+      </div>
+
+    </div>
+
+    <div class="highlight-box" style="text-align: center; padding: 20px 32px;">
+      <p style="font-size: 22px; font-weight: 700;">
+        We have the tech. We have the logic. We have the business pain.<br>
+        <span class="accent">Let's automate the boring stuff so our team can focus on growth.</span>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== SLIDE 6: THANK YOU ==================== -->
+<div class="slide" id="slide-6">
+  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+
+    <!-- Logos -->
+    <div style="display: flex; gap: 60px; align-items: center; margin-bottom: 40px;">
+      <div style="padding: 24px 40px; background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(240,240,255,0.9)); border: 2px solid rgba(255,255,255,0.6); border-radius: 24px; box-shadow: 0 0 60px rgba(79,172,254,0.3), 0 0 120px rgba(79,172,254,0.1), 0 8px 32px rgba(0,0,0,0.3);">
+        <img src="2c2p.png" alt="2C2P" style="height: 140px; object-fit: contain;">
+      </div>
+      <div style="font-size: 36px; color: rgba(255,255,255,0.15);">×</div>
+      <div style="padding: 24px 40px; background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,248,240,0.9)); border: 2px solid rgba(255,255,255,0.6); border-radius: 24px; box-shadow: 0 0 60px rgba(255,171,64,0.3), 0 0 120px rgba(255,171,64,0.1), 0 8px 32px rgba(0,0,0,0.3);">
+        <img src="aws.png" alt="AWS" style="height: 140px; object-fit: contain;">
+      </div>
+    </div>
+
+    <div style="font-size: 72px; margin-bottom: 24px;">📊</div>
+    <div style="font-size: 56px; font-weight: 800; margin-bottom: 16px;">
+      <span class="accent">Smart Reconciler</span>
+    </div>
+    <div style="font-size: 22px; color: #8892b0; margin-bottom: 48px;">
+      AI-Powered Tax Reconciliation Engine
+    </div>
+
+    <div class="cards cards-3" style="max-width: 800px; flex: 0;">
+      <div class="card" style="text-align: center; padding: 20px;">
+        <div style="font-size: 28px; margin-bottom: 8px;">🧠</div>
+        <p style="font-weight: 600; color: #bb86fc;">Generative AI</p>
+        <p style="font-size: 13px;">Amazon Bedrock</p>
+      </div>
+      <div class="card" style="text-align: center; padding: 20px;">
+        <div style="font-size: 28px; margin-bottom: 8px;">📊</div>
+        <p style="font-weight: 600; color: #00e676;">Traditional ML</p>
+        <p style="font-size: 13px;">scikit-learn + RapidFuzz</p>
+      </div>
+      <div class="card" style="text-align: center; padding: 20px;">
+        <div style="font-size: 28px; margin-bottom: 8px;">☁️</div>
+        <p style="font-weight: 600; color: #ffab40;">AWS Cloud</p>
+        <p style="font-size: 13px;">S3 + DynamoDB</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 48px; color: #8892b0; font-size: 20px;">Thank You — Q&A</div>
+  </div>
+</div>
+
+<!-- ==================== NAVIGATION ==================== -->
+<div class="nav">
+  <button onclick="prevSlide()">← Prev</button>
+  <span class="counter" id="counter">1 / 6</span>
+  <button onclick="nextSlide()">Next →</button>
+</div>
+
+<script>
+  let current = 1;
+  const total = 6;
+
+  function showSlide(n) {
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.getElementById('slide-' + n).classList.add('active');
+    document.getElementById('counter').textContent = n + ' / ' + total;
+    document.getElementById('progress').style.width = (n / total * 100) + '%';
+  }
+
+  function nextSlide() { if (current < total) { current++; showSlide(current); } }
+  function prevSlide() { if (current > 1) { current--; showSlide(current); } }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+  });
+
+  // PDF Carousel
+  let pdfIndex = 0;
+  const pdfImgs = document.querySelectorAll('.pdf-img');
+  const pdfDots = document.querySelectorAll('.pdf-dot');
+
+  function showPdf(idx) {
+    pdfIndex = idx;
+    pdfImgs.forEach((img, i) => { img.style.opacity = i === idx ? '1' : '0'; });
+    pdfDots.forEach((dot, i) => {
+      dot.style.background = i === idx ? '#4facfe' : '#555';
+      dot.classList.toggle('active-dot', i === idx);
+    });
+  }
+
+  // Auto-rotate every 3 seconds, pause on hover
+  let pdfTimer = setInterval(() => { showPdf((pdfIndex + 1) % pdfImgs.length); }, 3000);
+  const carousel = document.getElementById('pdf-carousel');
+  if (carousel) {
+    carousel.addEventListener('mouseenter', () => clearInterval(pdfTimer));
+    carousel.addEventListener('mouseleave', () => {
+      pdfTimer = setInterval(() => { showPdf((pdfIndex + 1) % pdfImgs.length); }, 3000);
+    });
+  }
+
+  showSlide(1);
+</script>
+
 </body>
 </html>
